@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: assignment2Consumer.ConsumerMain
+Class-Path: commons-pool2-2.9.0.jar amqp-client-5.7.1.jar gson-2.9.0.jar
+  slf4j-api-1.7.26.jar
+
