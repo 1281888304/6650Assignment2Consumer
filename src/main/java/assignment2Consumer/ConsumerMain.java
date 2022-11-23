@@ -10,14 +10,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import model.LiftRide;
+import redis.clients.jedis.JedisPool;
 
 
 public class ConsumerMain {
 
   private static final ConcurrentHashMap<Integer, List<LiftRide>> map=new ConcurrentHashMap<>();
-  private final static String QUEUE_NAME = "skier_queue";
-
-  private final static int THREAD_NUM=30;
+  //private final static String QUEUE_NAME = "skier_queue";
+  private final static String QUEUE_NAME = "queue";
+  private final static int THREAD_NUM=150;
 
   private static final AtomicInteger consumerMessageNum=new AtomicInteger(0);
 
@@ -26,7 +27,8 @@ public class ConsumerMain {
 
   public static void main(String[] args) {
     ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost("172.31.24.63");
+    //factory.setHost("172.31.24.63");
+    factory.setHost("52.25.17.217");
     factory.setPort(5672);
     Connection connection = null;
     try {
@@ -37,24 +39,17 @@ public class ConsumerMain {
       throw new RuntimeException("Error time out on get connection");
     }
 
+    //get Redis pool
+    //JedisPool pool = new JedisPool("172.31.7.157", 6379);
+    JedisPool pool = new JedisPool("35.92.11.27", 6379);
+
     for(int i=0;i<THREAD_NUM;i++){
-      ConsumerTask consumerTask=new ConsumerTask(map,QUEUE_NAME,countDownLatch,consumerMessageNum,connection);
-      Thread thread=new Thread(consumerTask);
+      //ConsumerTask task=new ConsumerTask(map,QUEUE_NAME,countDownLatch,consumerMessageNum,connection);
+      RedisConsumerTask task=new RedisConsumerTask(QUEUE_NAME,connection,pool);
+      Thread thread=new Thread(task);
       thread.start();
     }
-    try {
-      countDownLatch.await();
-      int num=0;
-      for(Map.Entry<Integer,List<LiftRide>> entry : map.entrySet()){
-        num+=entry.getValue().size();
-      }
-      System.out.println("total message "+consumerMessageNum.get()+" have been consumer");
-      System.out.println("Hash map total message store "+num);
-      System.out.println("Map entry size "+map.entrySet().size());
-      System.out.println("Map size "+map.size());
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+
 
   }
 
